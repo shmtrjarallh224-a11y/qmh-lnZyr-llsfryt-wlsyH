@@ -586,15 +586,7 @@ export default function ProfileEditScreen() {
           queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetProfileCompletionQueryKey() });
 
-          setSuccessVisible(true);
-          Animated.sequence([
-            Animated.timing(successOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
-            Animated.delay(1800),
-            Animated.timing(successOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
-          ]).start(() => {
-            setSuccessVisible(false);
-            router.back();
-          });
+          router.replace('/(tabs)?profileSaved=1' as any);
         },
         onError: () => {
           Alert.alert('خطأ', 'تعذّر حفظ البيانات. يرجى المحاولة مجدداً.');

@@ -13,8 +13,9 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useGetHomeSummary, getGetHomeSummaryQueryKey } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';
 import { useServiceSettings } from '@/context/ServiceSettingsContext';
@@ -29,11 +30,16 @@ export default function HomeScreen() {
   const colors = useColors();
   const { data: home, isLoading } = useGetHomeSummary({ query: { queryKey: getGetHomeSummaryQueryKey() } });
   const { flightsEnabled, packagesEnabled, visasEnabled } = useServiceSettings();
+  const params = useLocalSearchParams<{ profileSaved?: string }>();
 
   const paddingTop = Platform.OS === 'web' ? 67 : insets.top;
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
+
+  // Toast for profile save
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastSlide  = useRef(new Animated.Value(-60)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -41,6 +47,23 @@ export default function HomeScreen() {
       Animated.spring(slideAnim, { toValue: 0, speed: 12, bounciness: 4, useNativeDriver: true }),
     ]).start();
   }, []);
+
+  useEffect(() => {
+    if (params.profileSaved !== '1') return;
+    // Slide in from top
+    Animated.parallel([
+      Animated.timing(toastOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.spring(toastSlide, { toValue: 0, speed: 14, bounciness: 6, useNativeDriver: true }),
+    ]).start();
+    // Auto-dismiss after 3 s
+    const timer = setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(toastOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+        Animated.timing(toastSlide, { toValue: -60, duration: 400, useNativeDriver: true }),
+      ]).start();
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [params.profileSaved]);
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -210,6 +233,44 @@ export default function HomeScreen() {
           </View>
         )}
       </Animated.ScrollView>
+
+      {/* ── Profile saved toast ── */}
+      <Animated.View
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: paddingTop + 12,
+          left: 16,
+          right: 16,
+          zIndex: 999,
+          opacity: toastOpacity,
+          transform: [{ translateY: toastSlide }],
+        }}
+      >
+        <LinearGradient
+          colors={['#2ecc71', '#27ae60']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={{
+            flexDirection: 'row-reverse',
+            alignItems: 'center',
+            gap: 10,
+            paddingVertical: 14,
+            paddingHorizontal: 18,
+            borderRadius: 16,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.18,
+            shadowRadius: 12,
+            elevation: 10,
+          }}
+        >
+          <Ionicons name="checkmark-circle" size={22} color="#fff" />
+          <Text style={{ color: '#fff', fontFamily: 'Tajawal_700Bold', fontSize: 15, flex: 1, textAlign: 'right' }}>
+            تم حفظ بيانات الملف الشخصي بنجاح
+          </Text>
+        </LinearGradient>
+      </Animated.View>
     </View>
   );
 }
