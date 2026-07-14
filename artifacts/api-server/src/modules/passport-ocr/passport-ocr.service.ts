@@ -273,7 +273,7 @@ export class PassportOcrService {
         ocrConfidence: ocrResult.confidence,
         mrzFound: !!mrz,
         mrzChecksumValid: mrz?.checksumValid ?? false,
-        trustSource: !!mrz, // MRZ is trusted; freetext-only must pass validation
+        trustSource: true, // always pass partial results through; user can correct missing fields
         totalStart,
       },
     );

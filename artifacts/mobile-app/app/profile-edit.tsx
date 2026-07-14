@@ -440,9 +440,9 @@ export default function ProfileEditScreen() {
       const res: any = await ocrMutation.mutateAsync({ data: { passportImage: blobAsFile } });
 
       const p = res?.passport ?? res?.data?.passport;
-      if (!p || p.confidence < 30) {
+      if (!p) {
         setOcrError(
-          'لم نتمكن من قراءة بيانات الجواز بوضوح. يرجى التقاط صورة أوضح مع إضاءة جيدة وتجنب الانعكاسات.',
+          'لم نتمكن من قراءة بيانات الجواز. يرجى المحاولة مجدداً.',
         );
         return;
       }
