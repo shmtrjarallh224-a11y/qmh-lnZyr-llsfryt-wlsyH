@@ -18,7 +18,7 @@ function resolveOpenAIConfig(): { baseURL?: string; apiKey: string } {
   const aiBase = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
   const aiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
   if (aiBase && aiKey) return { baseURL: aiBase, apiKey: aiKey };
-  return { apiKey: process.env.OPENAI_API_KEY ?? '' };
+  return { apiKey: process.env.OPENAI_API_KEY || process.env.API || '' };
 }
 
 /** Returns a valid YYYY-MM-DD string, or '' if the input isn't one. */

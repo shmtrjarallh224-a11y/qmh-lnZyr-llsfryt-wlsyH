@@ -29,8 +29,9 @@ function getOpenAIConfig(): { baseURL?: string; apiKey: string } | null {
   if (integrationBase && integrationKey && integrationBase.startsWith('http')) {
     return { baseURL: integrationBase, apiKey: integrationKey };
   }
-  if (process.env.OPENAI_API_KEY) {
-    return { apiKey: process.env.OPENAI_API_KEY };
+  const personalKey = process.env.OPENAI_API_KEY || process.env.API;
+  if (personalKey) {
+    return { apiKey: personalKey };
   }
   return null;
 }
