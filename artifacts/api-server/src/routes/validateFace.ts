@@ -116,8 +116,17 @@ The reason must be a short sentence in Arabic.`,
       }
     } catch (err: any) {
       req.log?.error({ err }, 'Face validation error');
-      // FAIL CLOSED — do not accept unverified images. Let the user retry.
-      res.json({ valid: false, reason: 'تعذّر التحقق من الصورة، يرجى المحاولة مرة أخرى' });
+      // If the error is quota/billing related, fail OPEN so users aren't blocked
+      // by a billing issue on the server side. All other errors still fail closed.
+      const isQuotaError =
+        err?.status === 429 ||
+        err?.code === 'insufficient_quota' ||
+        String(err?.message).includes('quota');
+      if (isQuotaError) {
+        res.json({ valid: true, reason: 'تم قبول الصورة' });
+      } else {
+        res.json({ valid: false, reason: 'تعذّر التحقق من الصورة، يرجى المحاولة مرة أخرى' });
+      }
     }
   },
 );

@@ -320,32 +320,100 @@ export default function ProfileEditScreen() {
   // ─── Image picker ─────────────────────────────────────────────────────────────
 
   async function pickImage(): Promise<ImagePicker.ImagePickerAsset | null> {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى معرض الصور');
-      return null;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.85,
-      allowsEditing: true,
-      aspect: [1, 1],
+    return new Promise((resolve) => {
+      Alert.alert(
+        'اختيار الصورة',
+        'كيف تريد إضافة صورتك؟',
+        [
+          {
+            text: 'الكاميرا',
+            onPress: async () => {
+              const { status } = await ImagePicker.requestCameraPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى الكاميرا');
+                resolve(null);
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                quality: 0.85,
+                allowsEditing: true,
+                aspect: [1, 1],
+                cameraType: ImagePicker.CameraType.front,
+              });
+              resolve(result.canceled ? null : result.assets[0]);
+            },
+          },
+          {
+            text: 'معرض الصور',
+            onPress: async () => {
+              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى معرض الصور');
+                resolve(null);
+                return;
+              }
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                quality: 0.85,
+                allowsEditing: true,
+                aspect: [1, 1],
+              });
+              resolve(result.canceled ? null : result.assets[0]);
+            },
+          },
+          { text: 'إلغاء', style: 'cancel', onPress: () => resolve(null) },
+        ],
+        { cancelable: true, onDismiss: () => resolve(null) },
+      );
     });
-    return result.canceled ? null : result.assets[0];
   }
 
   async function pickPassportImage(): Promise<ImagePicker.ImagePickerAsset | null> {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى معرض الصور');
-      return null;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 1,
-      allowsEditing: false,
+    return new Promise((resolve) => {
+      Alert.alert(
+        'مسح الجواز',
+        'كيف تريد إضافة صورة الجواز؟',
+        [
+          {
+            text: 'الكاميرا',
+            onPress: async () => {
+              const { status } = await ImagePicker.requestCameraPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى الكاميرا');
+                resolve(null);
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                quality: 1,
+                allowsEditing: false,
+              });
+              resolve(result.canceled ? null : result.assets[0]);
+            },
+          },
+          {
+            text: 'معرض الصور',
+            onPress: async () => {
+              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى معرض الصور');
+                resolve(null);
+                return;
+              }
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                quality: 1,
+                allowsEditing: false,
+              });
+              resolve(result.canceled ? null : result.assets[0]);
+            },
+          },
+          { text: 'إلغاء', style: 'cancel', onPress: () => resolve(null) },
+        ],
+        { cancelable: true, onDismiss: () => resolve(null) },
+      );
     });
-    return result.canceled ? null : result.assets[0];
   }
 
   // ─── Step 0: Face photo upload + validation ────────────────────────────────────
