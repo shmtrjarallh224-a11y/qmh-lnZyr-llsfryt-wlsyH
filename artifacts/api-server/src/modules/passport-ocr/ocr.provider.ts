@@ -316,9 +316,11 @@ class TesseractProvider implements OcrProvider {
       logger: () => undefined, // suppress progress logs
     });
     await worker.setParameters({
-      tessedit_char_whitelist:
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<./-: ',
-      preserve_interword_spaces: '1',
+      // MRZ uses only uppercase letters, digits, and filler '<'
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<./-: ',
+      // PSM 6: assume a single uniform block of text — better for MRZ rows
+      tessedit_pageseg_mode: '6' as any,
+      preserve_interword_spaces: '0',
     });
 
     const { data } = await worker.recognize(image);

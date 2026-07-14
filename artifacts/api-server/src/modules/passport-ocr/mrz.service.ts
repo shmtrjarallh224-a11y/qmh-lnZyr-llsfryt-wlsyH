@@ -38,43 +38,59 @@ function parseName(nameField: string): { surname: string; givenNames: string } {
   return { surname, givenNames };
 }
 
+/**
+ * Normalize a candidate MRZ line to exactly targetLen characters.
+ * Strips internal spaces, pads with '<' if too short, truncates if too long
+ * within ±6 chars tolerance (handles common Tesseract over/under-reads).
+ */
+function normalizeMrzLine(line: string, targetLen: number): string | null {
+  const cleaned = line.replace(/\s/g, '').toUpperCase();
+  if (cleaned.length === targetLen) return cleaned;
+  if (cleaned.length >= targetLen - 6 && cleaned.length <= targetLen + 6) {
+    if (cleaned.length < targetLen) return cleaned.padEnd(targetLen, '<');
+    return cleaned.slice(0, targetLen);
+  }
+  return null; // too far off to be a valid MRZ line
+}
+
 /** Extracts the raw MRZ lines from OCR text. Returns null if not found. */
 export function detectMrzLines(ocrText: string): string[] | null {
-  // Normalize: remove spaces within potential MRZ lines
-  const lines = ocrText
-    .split('\n')
-    .map(l => l.replace(/\s/g, '').toUpperCase());
+  const rawLines = ocrText.split('\n');
 
-  // TD3: two 44-char lines starting with P< or P
-  const td3Lines = lines.filter(l => /^[A-Z0-9<]{44}$/.test(l));
-  if (td3Lines.length >= 2) {
-    // Find a pair: first line starts with P, second is 9-digit number zone
-    for (let i = 0; i < td3Lines.length - 1; i++) {
-      const l1 = td3Lines[i];
-      const l2 = td3Lines[i + 1];
-      if (/^P[A-Z<]/.test(l1) && /^[A-Z0-9<]{44}$/.test(l2)) {
-        return [l1, l2];
+  // TD3: two ~44-char lines (passports)
+  const td3Candidates = rawLines
+    .map(l => normalizeMrzLine(l, 44))
+    .filter((l): l is string => l !== null && /^[A-Z0-9<]+$/.test(l));
+
+  if (td3Candidates.length >= 2) {
+    // Prefer pair where line1 starts with P (passport type)
+    for (let i = 0; i < td3Candidates.length - 1; i++) {
+      if (/^P[A-Z<]/.test(td3Candidates[i])) {
+        return [td3Candidates[i], td3Candidates[i + 1]];
       }
     }
-    return [td3Lines[0], td3Lines[1]];
+    // VISA
+    for (let i = 0; i < td3Candidates.length - 1; i++) {
+      if (/^V/.test(td3Candidates[i])) {
+        return [td3Candidates[i], td3Candidates[i + 1]];
+      }
+    }
+    // Fallback: return first two valid candidates
+    return [td3Candidates[0], td3Candidates[1]];
   }
 
-  // TD2: two 36-char lines
-  const td2Lines = lines.filter(l => /^[A-Z0-9<]{36}$/.test(l));
-  if (td2Lines.length >= 2) {
-    for (let i = 0; i < td2Lines.length - 1; i++) {
-      const l1 = td2Lines[i];
-      const l2 = td2Lines[i + 1];
-      if (/^[IAC<][A-Z<]/.test(l1)) return [l1, l2];
-    }
-  }
+  // TD2: two ~36-char lines
+  const td2Candidates = rawLines
+    .map(l => normalizeMrzLine(l, 36))
+    .filter((l): l is string => l !== null && /^[A-Z0-9<]+$/.test(l));
 
-  // VISA (MRV-A/MRV-B): two lines
-  const visaLines = lines.filter(l => /^[A-Z0-9<]{44}$/.test(l));
-  if (visaLines.length >= 2) {
-    for (let i = 0; i < visaLines.length - 1; i++) {
-      if (/^V/.test(visaLines[i])) return [visaLines[i], visaLines[i + 1]];
+  if (td2Candidates.length >= 2) {
+    for (let i = 0; i < td2Candidates.length - 1; i++) {
+      if (/^[IAC<][A-Z<]/.test(td2Candidates[i])) {
+        return [td2Candidates[i], td2Candidates[i + 1]];
+      }
     }
+    return [td2Candidates[0], td2Candidates[1]];
   }
 
   return null;
