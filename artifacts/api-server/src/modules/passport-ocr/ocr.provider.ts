@@ -11,14 +11,15 @@
 import type { OcrProvider, OcrResult, StructuredPassport } from './types.js';
 
 // ─── Shared OpenAI client config ──────────────────────────────────────────────
-// Prefer the Replit-managed OpenAI integration (proxy — no personal quota).
-// Only use it when BOTH base URL and key are present; otherwise fall back to a
-// personal OPENAI_API_KEY. Keeps client init consistent with isAvailable().
+// Prefer personal OPENAI_API_KEY (has billing). Only fall back to the
+// Replit-managed AI integrations proxy if no personal key is configured.
 function resolveOpenAIConfig(): { baseURL?: string; apiKey: string } {
+  const personalKey = process.env.OPENAI_API_KEY || process.env.API;
+  if (personalKey) return { apiKey: personalKey };
   const aiBase = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
   const aiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
   if (aiBase && aiKey) return { baseURL: aiBase, apiKey: aiKey };
-  return { apiKey: process.env.OPENAI_API_KEY || process.env.API || '' };
+  return { apiKey: '' };
 }
 
 /** Returns a valid YYYY-MM-DD string, or '' if the input isn't one. */
