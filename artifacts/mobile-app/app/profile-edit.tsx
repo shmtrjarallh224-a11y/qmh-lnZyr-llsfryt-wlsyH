@@ -319,107 +319,71 @@ export default function ProfileEditScreen() {
 
   // ─── Image picker ─────────────────────────────────────────────────────────────
 
-  async function pickImage(): Promise<ImagePicker.ImagePickerAsset | null> {
-    return new Promise((resolve) => {
-      Alert.alert(
-        'اختيار الصورة',
-        'كيف تريد إضافة صورتك؟',
-        [
-          {
-            text: 'الكاميرا',
-            onPress: async () => {
-              const { status } = await ImagePicker.requestCameraPermissionsAsync();
-              if (status !== 'granted') {
-                Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى الكاميرا');
-                resolve(null);
-                return;
-              }
-              const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ['images'],
-                quality: 0.85,
-                allowsEditing: true,
-                aspect: [1, 1],
-                cameraType: ImagePicker.CameraType.front,
-              });
-              resolve(result.canceled ? null : result.assets[0]);
-            },
-          },
-          {
-            text: 'معرض الصور',
-            onPress: async () => {
-              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-              if (status !== 'granted') {
-                Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى معرض الصور');
-                resolve(null);
-                return;
-              }
-              const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images'],
-                quality: 0.85,
-                allowsEditing: true,
-                aspect: [1, 1],
-              });
-              resolve(result.canceled ? null : result.assets[0]);
-            },
-          },
-          { text: 'إلغاء', style: 'cancel', onPress: () => resolve(null) },
-        ],
-        { cancelable: true, onDismiss: () => resolve(null) },
-      );
+  async function pickImageFromGallery(): Promise<ImagePicker.ImagePickerAsset | null> {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى معرض الصور');
+      return null;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      allowsEditing: true,
+      aspect: [1, 1],
     });
+    return result.canceled ? null : result.assets[0];
   }
 
-  async function pickPassportImage(): Promise<ImagePicker.ImagePickerAsset | null> {
-    return new Promise((resolve) => {
-      Alert.alert(
-        'مسح الجواز',
-        'كيف تريد إضافة صورة الجواز؟',
-        [
-          {
-            text: 'الكاميرا',
-            onPress: async () => {
-              const { status } = await ImagePicker.requestCameraPermissionsAsync();
-              if (status !== 'granted') {
-                Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى الكاميرا');
-                resolve(null);
-                return;
-              }
-              const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ['images'],
-                quality: 1,
-                allowsEditing: false,
-              });
-              resolve(result.canceled ? null : result.assets[0]);
-            },
-          },
-          {
-            text: 'معرض الصور',
-            onPress: async () => {
-              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-              if (status !== 'granted') {
-                Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى معرض الصور');
-                resolve(null);
-                return;
-              }
-              const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ['images'],
-                quality: 1,
-                allowsEditing: false,
-              });
-              resolve(result.canceled ? null : result.assets[0]);
-            },
-          },
-          { text: 'إلغاء', style: 'cancel', onPress: () => resolve(null) },
-        ],
-        { cancelable: true, onDismiss: () => resolve(null) },
-      );
+  async function pickImageFromCamera(): Promise<ImagePicker.ImagePickerAsset | null> {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى الكاميرا');
+      return null;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+      allowsEditing: true,
+      aspect: [1, 1],
+      cameraType: ImagePicker.CameraType.front,
     });
+    return result.canceled ? null : result.assets[0];
+  }
+
+  async function pickPassportFromGallery(): Promise<ImagePicker.ImagePickerAsset | null> {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى معرض الصور');
+      return null;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 1,
+      allowsEditing: false,
+    });
+    return result.canceled ? null : result.assets[0];
+  }
+
+  async function pickPassportFromCamera(): Promise<ImagePicker.ImagePickerAsset | null> {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('الإذن مطلوب', 'يرجى السماح للتطبيق بالوصول إلى الكاميرا');
+      return null;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 1,
+      allowsEditing: false,
+    });
+    return result.canceled ? null : result.assets[0];
   }
 
   // ─── Step 0: Face photo upload + validation ────────────────────────────────────
 
-  async function handleFaceUpload() {
-    const asset = await pickImage();
+  async function handleFaceUpload(source: 'camera' | 'gallery') {
+    const asset = source === 'camera'
+      ? await pickImageFromCamera()
+      : await pickImageFromGallery();
     if (!asset) return;
 
     setFaceValidating(true);
@@ -456,8 +420,10 @@ export default function ProfileEditScreen() {
 
   // ─── Step 1: Passport scan + OCR ──────────────────────────────────────────────
 
-  async function handlePassportScan() {
-    const asset = await pickPassportImage();
+  async function handlePassportScan(source: 'camera' | 'gallery') {
+    const asset = source === 'camera'
+      ? await pickPassportFromCamera()
+      : await pickPassportFromGallery();
     if (!asset) return;
 
     setOcrLoading(true);
@@ -539,8 +505,10 @@ export default function ProfileEditScreen() {
 
   // ─── Residence image upload ────────────────────────────────────────────────────
 
-  async function handleResidenceImage(side: 'front' | 'back') {
-    const asset = await pickPassportImage();
+  async function handleResidenceImage(side: 'front' | 'back', source: 'camera' | 'gallery') {
+    const asset = source === 'camera'
+      ? await pickPassportFromCamera()
+      : await pickPassportFromGallery();
     if (!asset) return;
     setResidenceUploading(side);
     try {
@@ -743,31 +711,60 @@ export default function ProfileEditScreen() {
           </View>
         ) : null}
 
-        {/* Upload button */}
-        <TouchableOpacity
-          onPress={handleFaceUpload}
-          disabled={faceValidating}
-          activeOpacity={0.8}
-        >
-          <LinearGradient
-            colors={faceValid ? ['#166534', '#15803d'] : ['#1d4ed8', '#1a56db']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={{
-              borderRadius: 14,
-              paddingVertical: 14,
-              paddingHorizontal: 32,
-              flexDirection: 'row-reverse',
-              alignItems: 'center',
-              gap: 10,
-              opacity: faceValidating ? 0.6 : 1,
-            }}
+        {/* Upload buttons: camera + gallery */}
+        <View style={{ flexDirection: 'row-reverse', gap: 10, width: '100%' }}>
+          <TouchableOpacity
+            onPress={() => handleFaceUpload('camera')}
+            disabled={faceValidating}
+            activeOpacity={0.8}
+            style={{ flex: 1 }}
           >
-            <Ionicons name={faceValid ? 'refresh-outline' : 'camera-outline'} size={20} color="#fff" />
-            <Text style={{ color: '#fff', fontFamily: 'Tajawal_700Bold', fontSize: 15 }}>
-              {faceValid ? 'تغيير الصورة' : 'اختيار صورة الوجه'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={['#1d4ed8', '#1a56db']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={{
+                borderRadius: 14,
+                paddingVertical: 14,
+                flexDirection: 'row-reverse',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                opacity: faceValidating ? 0.6 : 1,
+              }}
+            >
+              <Ionicons name="camera-outline" size={20} color="#fff" />
+              <Text style={{ color: '#fff', fontFamily: 'Tajawal_700Bold', fontSize: 14 }}>
+                الكاميرا
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => handleFaceUpload('gallery')}
+            disabled={faceValidating}
+            activeOpacity={0.8}
+            style={{ flex: 1 }}
+          >
+            <LinearGradient
+              colors={faceValid ? ['#166534', '#15803d'] : ['#374151', '#4b5563']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={{
+                borderRadius: 14,
+                paddingVertical: 14,
+                flexDirection: 'row-reverse',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                opacity: faceValidating ? 0.6 : 1,
+              }}
+            >
+              <Ionicons name={faceValid ? 'refresh-outline' : 'images-outline'} size={20} color="#fff" />
+              <Text style={{ color: '#fff', fontFamily: 'Tajawal_700Bold', fontSize: 14 }}>
+                {faceValid ? 'تغيير' : 'المعرض'}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
 
         {/* Requirements list */}
         <View
@@ -873,27 +870,58 @@ export default function ProfileEditScreen() {
           </View>
         ) : null}
 
-        {/* Scan button */}
-        <TouchableOpacity onPress={handlePassportScan} disabled={ocrLoading} activeOpacity={0.8}>
-          <LinearGradient
-            colors={ocrLoading ? ['#374151', '#374151'] : ['#1d4ed8', '#1a56db']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={{
-              borderRadius: 14,
-              paddingVertical: 14,
-              paddingHorizontal: 24,
-              flexDirection: 'row-reverse',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-            }}
+        {/* Scan buttons: camera + gallery */}
+        <View style={{ flexDirection: 'row-reverse', gap: 10, width: '100%' }}>
+          <TouchableOpacity
+            onPress={() => handlePassportScan('camera')}
+            disabled={ocrLoading}
+            activeOpacity={0.8}
+            style={{ flex: 1 }}
           >
-            <Ionicons name="scan-outline" size={20} color="#fff" />
-            <Text style={{ color: '#fff', fontFamily: 'Tajawal_700Bold', fontSize: 15 }}>
-              {passportData ? 'إعادة مسح الجواز' : 'مسح جواز السفر'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={ocrLoading ? ['#374151', '#374151'] : ['#1d4ed8', '#1a56db']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={{
+                borderRadius: 14,
+                paddingVertical: 14,
+                flexDirection: 'row-reverse',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <Ionicons name="camera-outline" size={20} color="#fff" />
+              <Text style={{ color: '#fff', fontFamily: 'Tajawal_700Bold', fontSize: 14 }}>
+                الكاميرا
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => handlePassportScan('gallery')}
+            disabled={ocrLoading}
+            activeOpacity={0.8}
+            style={{ flex: 1 }}
+          >
+            <LinearGradient
+              colors={ocrLoading ? ['#374151', '#374151'] : ['#374151', '#4b5563']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={{
+                borderRadius: 14,
+                paddingVertical: 14,
+                flexDirection: 'row-reverse',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <Ionicons name="images-outline" size={20} color="#fff" />
+              <Text style={{ color: '#fff', fontFamily: 'Tajawal_700Bold', fontSize: 14 }}>
+                المعرض
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
 
         {/* Extracted data display */}
         {passportData && (
@@ -1148,7 +1176,7 @@ export default function ProfileEditScreen() {
 
             {/* Front */}
             <TouchableOpacity
-              onPress={() => handleResidenceImage('front')}
+              onPress={() => handleResidenceImage('front', 'gallery')}
               disabled={residenceUploading === 'front'}
               activeOpacity={0.8}
             >
@@ -1190,7 +1218,7 @@ export default function ProfileEditScreen() {
 
             {/* Back */}
             <TouchableOpacity
-              onPress={() => handleResidenceImage('back')}
+              onPress={() => handleResidenceImage('back', 'gallery')}
               disabled={residenceUploading === 'back'}
               activeOpacity={0.8}
             >
